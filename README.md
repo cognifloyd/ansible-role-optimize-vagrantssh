@@ -1,47 +1,37 @@
-# Ansible Role: Packer RHEL/CentOS Configuration for Vagrant VirtualBox
+# Ansible Role: Optimize connections for Vagrant-managed RHEL/CentOS boxes
 
-[![Build Status](https://travis-ci.org/geerlingguy/ansible-role-packer-rhel.svg?branch=master)](https://travis-ci.org/geerlingguy/ansible-role-packer-rhel)
+[![Build Status](https://travis-ci.org/cognifloyd/ansible-role-optimize-vagrantssh.svg?branch=master)](https://travis-ci.org/cognifloyd/ansible-role-optimize-vagrantssh)
 
-This role configures RHEL/CentOS (either minimal or full install) in preparation for it to be packaged as part of a .box file for Vagrant/VirtualBox deployment using [Packer](http://www.packer.io/).
+This role optimizes the vm (RHEL/CentOS) for speedy vagrant connections.
 
-The role may be made more flexible in the future, so it could work with other Linux flavors and/or other Packer builders besides VirtualBox, but I'm currently only focused on VirtualBox, since the main use case right now is developer VMs.
+This role was forked from geerlingguy.packer-rhel v1.2.2 (e392ebc).
 
 ## Requirements
+
+!!! warning "This is out of date!"
 
 Prior to running this role via Packer, you need to make sure Ansible is installed via a shell provisioner, and that preliminary VM configuration (like adding a vagrant user to the appropriate group and the sudoers file) is complete, generally by using a Kickstart installation file (e.g. `ks.cfg`) with Packer. An example array of provisioners for your Packer .json template would be something like:
 
     "provisioners": [
       {
-        "type": "shell",
-        "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
-        "script": "scripts/ansible.sh"
-      },
-      {
-        "type": "ansible-local",
+        "type": "ansible",
         "playbook_file": "ansible/main.yml",
         "role_paths": [
-          "/Users/jgeerling/Dropbox/VMs/roles/geerlingguy.packer-rhel",
+          "/home/cognifloyd/.galaxy/roles/cognifloyd.optimize-vagrantssh",
         ]
       }
     ],
 
 The files should contain, at a minimum:
 
-**scripts/ansible.sh**:
-
-    #!/bin/bash -eux
-    # Add the EPEL repository, and install Ansible.
-    rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-    yum -y install ansible python-setuptools
-
 **ansible/main.yml**:
 
     ---
     - hosts: all
-      sudo: yes
-      gather_facts: yes
+      become: true
+      gather_facts: true
       roles:
-        - geerlingguy.packer-rhel
+        - cognifloyd.optimize-vagrantssh
 
 You might also want to add another shell provisioner to run cleanup, erasing free space using `dd`, but this is not required (it will just save a little disk space in the Packer-produced .box file).
 
@@ -59,7 +49,7 @@ None.
 
     - hosts: all
       roles:
-        - { role: geerlingguy.packer-rhel }
+        - { role: cognifloyd.optimize-vagrantssh }
 
 ## License
 
@@ -67,4 +57,4 @@ MIT / BSD
 
 ## Author Information
 
-This role was created in 2014 by [Jeff Geerling](http://www.jeffgeerling.com/), author of [Ansible for DevOps](https://www.ansiblefordevops.com/).
+This role is based on the [geerlingguy.packer-rhel](https://galaxy.ansible.com/geerlingguy/packer-rhel/) role that was created in 2014 by [Jeff Geerling](http://www.jeffgeerling.com/), author of [Ansible for DevOps](https://www.ansiblefordevops.com/).

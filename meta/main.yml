@@ -2,18 +2,17 @@
 dependencies: []
 
 galaxy_info:
-  author: geerlingguy
-  description: RedHat/CentOS configuration for Packer.
-  company: "Midwestern Mac, LLC"
+  author: cognifloyd
+  description: Vagrant connection optimization for RedHat/CentOS. (based on geerlingguy.packer-rhel)
+  company: "Theatro Labs, Inc."
   license: "license (BSD, MIT)"
-  min_ansible_version: 1.8
+  min_ansible_version: 2.0
   platforms:
     - name: EL
       versions:
       - 6
       - 7
   galaxy_tags:
-    - cloud
     - system
     - packaging
     - development
