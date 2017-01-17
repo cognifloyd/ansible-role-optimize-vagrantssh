@@ -3,12 +3,15 @@
 
 # Fix slow DNS.
 # from: geerlingguy.packer-rhel
+# see: https://github.com/mitchellh/vagrant/issues/1172
 - name: Fix slow DNS (adapted from Bento).
   lineinfile:
     dest: /etc/sysconfig/network
     regexp: '^RES_OPTIONS'
     line: 'RES_OPTIONS="single-request-reopen"'
     state: present
+  tags:
+    - vagrant_network
 
 # from: geerlingguy.packer-rhel
 - name: Restart network service (explicitly).
@@ -25,10 +28,28 @@
   with_items:
     - { regexp: '^UseDNS', line: 'UseDNS no' }
     - { regexp: '^GSSAPIAuthentication', line: 'GSSAPIAuthentication no' }
+  tags:
+    - vagrant_ssh
+
+# adapted from: https://github.com/CentOS/sig-cloud-instance-build/blob/5162d86c01/vagrant/centos7.ks
+- name: Prevent sshd from doing reverse DNS lookups (adapted from sig-cloud-instance-build).
+  blockinfile:
+    dest: /etc/sysconfig/sshd
+    insertafter: EOF
+    state: present
+    block: |
+      # Decrease connection time by preventing reverse DNS lookups
+      # (see https://lists.centos.org/pipermail/centos-devel/2016-July/014981.html
+      #  and man sshd for more information)
+      OPTIONS="-u0"
+  tags:
+    - vagrant_ssh
 
 # from: geerlingguy.packer-rhel
 - name: Remove RedHat interface persistence (step 1).
   shell: rm -f /etc/udev/rules.d/70-persistent-net.rules
+  tags:
+    - vagrant_network
 
 # from: geerlingguy.packer-rhel
 - name: Remove RedHat interface persistence (step 2).
@@ -39,3 +60,5 @@
   with_items:
     - '^HWADDR'
     - '^UUID'
+  tags:
+    - vagrant_network
