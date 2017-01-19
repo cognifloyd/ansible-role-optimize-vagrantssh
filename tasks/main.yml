@@ -10,12 +10,14 @@
     regexp: '^RES_OPTIONS'
     line: 'RES_OPTIONS="single-request-reopen"'
     state: present
+  register: slow_dns_fix
   tags:
-    - vagrant_network
+    - vagrant_slow_dns_fix
 
-# from: geerlingguy.packer-rhel
-- name: Restart network service (explicitly).
+# from: samdoran.packer-rhel
+- name: Restart network service.
   service: name=network state=restarted
+  when: slow_dns_fix | changed
 
 # SSH daemon configuration.
 # from: geerlingguy.packer-rhel
@@ -28,6 +30,7 @@
   with_items:
     - { regexp: '^UseDNS', line: 'UseDNS no' }
     - { regexp: '^GSSAPIAuthentication', line: 'GSSAPIAuthentication no' }
+  notify: restart sshd
   tags:
     - vagrant_ssh
 
@@ -35,30 +38,13 @@
 - name: Prevent sshd from doing reverse DNS lookups (adapted from sig-cloud-instance-build).
   blockinfile:
     dest: /etc/sysconfig/sshd
-    insertafter: EOF
     state: present
+    insertafter: EOF
     block: |
       # Decrease connection time by preventing reverse DNS lookups
       # (see https://lists.centos.org/pipermail/centos-devel/2016-July/014981.html
       #  and man sshd for more information)
       OPTIONS="-u0"
+  notify: restart sshd
   tags:
     - vagrant_ssh
-
-# from: geerlingguy.packer-rhel
-- name: Remove RedHat interface persistence (step 1).
-  shell: rm -f /etc/udev/rules.d/70-persistent-net.rules
-  tags:
-    - vagrant_network
-
-# from: geerlingguy.packer-rhel
-- name: Remove RedHat interface persistence (step 2).
-  lineinfile:
-    dest: /etc/sysconfig/network-scripts/ifcfg-eth0
-    regexp: "{{ item }}"
-    state: absent
-  with_items:
-    - '^HWADDR'
-    - '^UUID'
-  tags:
-    - vagrant_network
